@@ -11,7 +11,7 @@ const getUserById = (req, res) => {
       return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
     }
     return res.status(200).send(user);
-  }).catch((err) => {
+  }).catch(() => {
     res.status(500).send({ message: 'Server Error' });
   });
 };
