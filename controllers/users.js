@@ -6,17 +6,14 @@ const getUsers = (req, res) => User.find({})
 const getUserById = (req, res) => {
   const { id } = req.params;
 
-  return User.findById(id)
-    .then((user) => {
-      if (!user) {
-        return res.status(404).send({ message: 'User not found' });
-      }
-      return res.status(200).send(user);
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).send({ message: 'Server Error' });
-    });
+  return User.findById(id).then((user) => {
+    if (!user) {
+      return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
+    }
+    return res.status(200).send(user);
+  }).catch((err) => {
+    res.status(500).send({ message: 'Server Error' });
+  });
 };
 
 const createUser = (req, res) => {
@@ -24,9 +21,35 @@ const createUser = (req, res) => {
   return User.create(newUserData)
     .then((newUser) => res.status(201).send(newUser))
     .catch((err) => {
+      console.log(err);
       if (err.name === 'ValidationError') {
         return res.status(400).send({
-          message: `${Object.values(err.errors).map((error) => error.message).join(', ')}`,
+          message: `${Object.values(err.errors)
+            .map((error) => error.message)
+            .join(', ')}`,
+        });
+      }
+      return res.status(500).send({ message: 'Server Error' });
+    });
+};
+
+const updateUserById = (req, res) => {
+  console.log(req.user._id);
+  console.log(req.body);
+  const id = req.user._id;
+  const dataUpdate = req.body;
+  User.findByIdAndUpdate(id, dataUpdate, {
+    new: true,
+    runValidators: true,
+    upsert: false,
+  })
+    .then((updateUser) => res.status(201).send(updateUser))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return res.status(400).send({
+          message: `${Object.values(err.errors)
+            .map((error) => error.message)
+            .join(', ')}`,
         });
       }
       return res.status(500).send({ message: 'Server Error' });
@@ -37,4 +60,7 @@ module.exports = {
   getUsers,
   getUserById,
   createUser,
+  updateUserById,
+  // updateUser,
+  // updateUserAvatar,
 };
