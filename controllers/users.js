@@ -10,7 +10,7 @@ const getUserById = (req, res) => {
     .then((user) => res.status(200).send(user))
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
+        return res.status(400).send({ message: 'Запрашиваемый пользователь не найден' });
       }
       return res.status(500).send({ message: 'Server Error' });
     });
@@ -43,7 +43,7 @@ const updateUserById = (req, res) => {
     runValidators: true,
     upsert: false,
   })
-    .then((updateUser) => res.status(200).send(updateUser))
+    .then((updateUser) => res.status(201).send(updateUser))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         return res.status(400).send({
