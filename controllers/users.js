@@ -9,11 +9,15 @@ const getUserById = (req, res) => {
   return User.findById(id)
     .then((user) => {
       if (!user) {
-        return res.status(400).send({ message: 'Запрашиваемый пользователь не найден' });
+        return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
       }
-      res.status(200).send(user);
+      return res.status(200).send(user);
     })
-    .catch(() => res.status(500).send({ message: 'Server Error' }));
+    .catch((err) => {
+      // console.log(err);
+      if (err.name === 'CastError') return res.status(400).send({ message: 'Запрашиваемый пользователь не найден' });
+      return res.status(500).send({ message: 'Server Error' });
+    });
 };
 
 const createUser = (req, res) => {
