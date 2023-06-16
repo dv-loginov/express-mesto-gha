@@ -32,8 +32,9 @@ const deleteCardById = (req, res) => {
       return res.status(200).send(card);
     })
     .catch((err) => {
-      console.log(err);
-      res.status(500).send({ message: 'Ошибка сервера' });
+      // console.log(err);
+      if (err.name === 'CastError') return res.status(400).send({ message: 'У карточки некорректный id' });
+      return res.status(500).send({ message: 'Ошибка сервера' });
     });
 };
 
