@@ -5,15 +5,15 @@ const getUsers = (req, res) => User.find({})
 
 const getUserById = (req, res) => {
   const { id } = req.params;
-
-  return User.findById(id).then((user) => {
-    if (!user) {
-      return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
-    }
-    return res.status(200).send(user);
-  }).catch(() => {
-    res.status(500).send({ message: 'Server Error' });
-  });
+  console.log(id);
+  return User.findById(id)
+    .then((user) => res.status(200).send(user))
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
+      }
+      return res.status(500).send({ message: 'Server Error' });
+    });
 };
 
 const createUser = (req, res) => {
@@ -34,8 +34,8 @@ const createUser = (req, res) => {
 };
 
 const updateUserById = (req, res) => {
-  console.log(req.user._id);
-  console.log(req.body);
+  // console.log(req.user._id);
+  // console.log(req.body);
   const id = req.user._id;
   const dataUpdate = req.body;
   User.findByIdAndUpdate(id, dataUpdate, {
@@ -43,7 +43,7 @@ const updateUserById = (req, res) => {
     runValidators: true,
     upsert: false,
   })
-    .then((updateUser) => res.status(201).send(updateUser))
+    .then((updateUser) => res.status(200).send(updateUser))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         return res.status(400).send({
