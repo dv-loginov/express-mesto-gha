@@ -7,13 +7,13 @@ const getUserById = (req, res) => {
   const { id } = req.params;
   console.log(id);
   return User.findById(id)
-    .then((user) => res.status(200).send(user))
-    .catch((err) => {
-      if (err.name === 'CastError') {
+    .then((user) => {
+      if (!user) {
         return res.status(400).send({ message: 'Запрашиваемый пользователь не найден' });
       }
-      return res.status(500).send({ message: 'Server Error' });
-    });
+      res.status(200).send(user);
+    })
+    .catch(() => res.status(500).send({ message: 'Server Error' }));
 };
 
 const createUser = (req, res) => {
@@ -21,7 +21,7 @@ const createUser = (req, res) => {
   return User.create(newUserData)
     .then((newUser) => res.status(201).send(newUser))
     .catch((err) => {
-      console.log(err);
+      // console.log(err);
       if (err.name === 'ValidationError') {
         return res.status(400).send({
           message: `${Object.values(err.errors)
@@ -43,7 +43,7 @@ const updateUserById = (req, res) => {
     runValidators: true,
     upsert: false,
   })
-    .then((updateUser) => res.status(201).send(updateUser))
+    .then((updateUser) => res.status(200).send(updateUser))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         return res.status(400).send({
@@ -61,6 +61,4 @@ module.exports = {
   getUserById,
   createUser,
   updateUserById,
-  // updateUser,
-  // updateUserAvatar,
 };

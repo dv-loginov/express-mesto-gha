@@ -26,7 +26,6 @@ const createCard = (req, res) => {
 
 const deleteCardById = (req, res) => {
   const { id } = req.params;
-  // console.log(id);
   return Card.findByIdAndRemove(id)
     .then((card) => {
       if (!card) {
@@ -40,30 +39,38 @@ const deleteCardById = (req, res) => {
     });
 };
 
-const likeCard = (req, res) => {
-  console.log(req.user._id);
-  console.log(req.params);
-
-  return Card.findByIdAndUpdate(
-    req.params.cardId,
-    { $addToSet: { likes: req.user._id } }, // добавить _id в массив, если его там нет
-    { new: true },
-  ).then((newCard) => res.status(201).send(newCard))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        return res.status(400).send({
-          message: `${Object.values(err.errors).map((error) => error.message).join(', ')}`,
-        });
-      }
-      return res.status(500).send({ message: 'Server Error' });
-    });
-};
-
-const dislikeCard = (req, res) => Card.findByIdAndUpdate(
+const likeCard = (req, res) => Card.findByIdAndUpdate(
   req.params.cardId,
-  { $pull: { likes: req.user._id } }, // убрать _id из массива
+  { $addToSet: { likes: req.user._id } },
   { new: true },
-).then((newCard) => res.status(201).send(newCard))
+).then((newCard) => {
+  if (!newCard) {
+    return res.status(404).send({ message: 'Card not found' });
+  }
+  return res.status(201).send(newCard);
+})
+  .catch((err) => {
+    if (err.name === 'CastError') return res.status(400).send({ message: 'Card not found' });
+    if (err.name === 'ValidationError') {
+      return res.status(400).send({
+        message: `${Object.values(err.errors).map((error) => error.message).join(', ')}`,
+      });
+    }
+    return res.status(500).send({ message: 'Server Error' });
+  });
+
+const dislikeCard = (req, res) => Card
+  .findByIdAndUpdate(
+    req.params.cardId,
+    { $pull: { likes: req.user._id } },
+    { new: true },
+  )
+  .then((newCard) => {
+    if (!newCard) {
+      return res.status(404).send({ message: 'Card not found' });
+    }
+    return res.status(200).send(newCard);
+  })
   .catch((err) => {
     if (err.name === 'ValidationError') {
       return res.status(400).send({
@@ -74,9 +81,5 @@ const dislikeCard = (req, res) => Card.findByIdAndUpdate(
   });
 
 module.exports = {
-  getCards,
-  deleteCardById,
-  createCard,
-  likeCard,
-  dislikeCard,
+  getCards, deleteCardById, createCard, likeCard, dislikeCard,
 };
