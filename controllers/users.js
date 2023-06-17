@@ -23,49 +23,15 @@ const getUserById = (req, res) => {
   return User.findById(id)
     .orFail(new Error('NoValidId'))
     .then((user) => res.status(200).send(user))
-    .catch((err) => {
-      if (err.message === 'NoValidId') return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
-      if (err.name === 'CastError') return res.status(400).send({ message: 'Переданы некорректные данные' });
-      return res.status(500).send({ message: 'Ошибка сервера' });
-    });
+    .catch((err) => setErrors(res, err));
 };
 
 const createUser = (req, res) => {
   const newUserData = req.body;
   return User.create(newUserData)
     .then((newUser) => res.status(201).send(newUser))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        return res.status(400).send({
-          message: `${Object.values(err.errors)
-            .map((error) => error.message)
-            .join(', ')}`,
-        });
-      }
-      return res.status(500).send({ message: 'Ошибка сервера' });
-    });
+    .catch((err) => setErrors(res, err));
 };
-
-// const updateUserById = (req, res) => {
-//   const id = req.user._id;
-//   const dataUpdate = req.body;
-//   User.findByIdAndUpdate(id, dataUpdate, {
-//     new: true,
-//     runValidators: true,
-//     upsert: false,
-//   })
-//     .then((updateUser) => res.status(200).send(updateUser))
-//     .catch((err) => {
-//       if (err.name === 'ValidationError') {
-//         return res.status(400).send({
-//           message: `${Object.values(err.errors)
-//             .map((error) => error.message)
-//             .join(', ')}`,
-//         });
-//       }
-//       return res.status(500).send({ message: 'Ошибка сервера' });
-//     });
-// };
 
 const updateUserById = (req, res) => {
   const id = req.user._id;
