@@ -6,17 +6,18 @@ const {
   updateUserById,
   login,
 } = require('../controllers/users');
+const auth = require('../middlewares/auth');
 
-router.get('/', getUsers);
+router.get('/', auth, getUsers);
 
-router.get('/:id', getUserById);
+router.get('/:id', auth, getUserById);
 
 router.post('/signin', login);
 
 router.post('/signup', createUser);
 
-router.patch('/me', updateUserById);
+router.patch('/me', auth, updateUserById);
 
-router.patch('/me/avatar', updateUserById);
+router.patch('/me/avatar', auth, updateUserById);
 
 module.exports = router;
