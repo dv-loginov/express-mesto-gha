@@ -24,6 +24,20 @@ const userSchema = new Schema({
     },
     required: [true, 'Поле "avatar" должно быть заполнено'],
   },
+  email: {
+    type: String,
+    validate: {
+      validator: (v) => validator.isEmail(v),
+      message: 'Некорректный email',
+    },
+    required: [true, 'Поле "email" должно быть заполнено'],
+    unique: true,
+  },
+  password: {
+    type: String,
+    required: [true, 'Поле "password" должно быть заполнено'],
+    minlength: [8, 'Минимальная длина поля "about" - 8'],
+  },
 }, { versionKey: false });
 
 module.exports = mongoose.model('user', userSchema);
