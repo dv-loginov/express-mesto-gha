@@ -1,7 +1,13 @@
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
 const setErrors = (res, err) => {
+  if (err.message === 'NoValidEmailOrPassword') {
+    return res.status(401)
+      .send({ message: 'Не верный email или password' });
+  }
+
   if (err.message === 'NoValidId') return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
 
   if (err.name === 'CastError') return res.status(400).send({ message: 'Переданы некорректные данные' });
@@ -13,6 +19,7 @@ const setErrors = (res, err) => {
         .join(', ')}`,
     });
   }
+
   return res.status(500).send({ message: 'Ошибка сервера' });
 };
 
@@ -50,9 +57,37 @@ const updateUserById = (req, res) => {
     .catch((err) => setErrors(res, err));
 };
 
+const login = (req, res) => {
+  const { email, password } = req.body;
+  User.findOne({ email })
+    .orFail(new Error('NoValidEmailOrPassword'))
+    .then((user) => {
+      bcrypt.compare(password, user.password)
+        .then((matched) => {
+          if (!matched) throw new Error('NoValidEmailOrPassword');
+
+          const token = jwt.sign(
+            { _id: user._id },
+            'some-secret-key',
+            { expiresIn: '7d' },
+          );
+
+          // return res.status(200).send({ _id: token });
+          return res.status(200)
+            .cookie('jwt', token, {
+              maxAge: 3600000,
+              httpOnly: true,
+            });
+        })
+        .catch((err) => setErrors(res, err));
+    })
+    .catch((err) => setErrors(res, err));
+};
+
 module.exports = {
   getUsers,
   getUserById,
   createUser,
   updateUserById,
+  login,
 };

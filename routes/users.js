@@ -4,13 +4,16 @@ const {
   getUserById,
   createUser,
   updateUserById,
+  login,
 } = require('../controllers/users');
 
 router.get('/', getUsers);
 
 router.get('/:id', getUserById);
 
-router.post('/', createUser);
+router.post('/signin', login);
+
+router.post('/signup', createUser);
 
 router.patch('/me', updateUserById);
 
