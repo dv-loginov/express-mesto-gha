@@ -31,11 +31,9 @@ const setErrors = (res, err) => {
     .send({ message: 'Ошибка сервера' });
 };
 
-const getUsers = (req, res) => {
-  return User.find({})
-    .then((users) => res.status(200)
-      .send(users));
-};
+const getUsers = (req, res) => User.find({})
+  .then((users) => res.status(200)
+    .send(users));
 
 const getUserById = (req, res, id) => User.findById(id)
   .orFail(new Error('NoValidId'))
@@ -85,8 +83,7 @@ const login = (req, res) => {
     email,
     password,
   } = req.body;
-  console.log(req.body);
-  User.findOne({ email })
+  User.findOne({ email }).select('+password')
     .orFail(new Error('NoValidEmailOrPassword'))
     .then((user) => {
       console.log(user);
@@ -99,7 +96,7 @@ const login = (req, res) => {
             'some-secret-key',
             { expiresIn: '7d' },
           );
-          console.log(token);
+
           return res.status(200)
             .cookie('jwt', token, {
               maxAge: 3600000,
