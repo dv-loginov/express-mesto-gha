@@ -1,7 +1,7 @@
 const Card = require('../models/card');
 
 const setErrors = (res, err) => {
-  if (err.message === 'NoValidId') return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
+  if (err.message === 'NoValidId') return res.status(404).send({ message: 'Запрашиваемый id не найден' });
 
   if (err.name === 'CastError') return res.status(400).send({ message: 'Переданы некорректные данные' });
 
@@ -29,11 +29,18 @@ const createCard = (req, res) => {
     .catch((err) => setErrors(res, err));
 };
 
-const deleteCardById = (req, res) => {
+const deleteCard = (req, res) => {
   const { id } = req.params;
-  return Card.findByIdAndRemove(id)
+  Card.findById(id)
     .orFail(new Error('NoValidId'))
-    .then((card) => res.status(200).send(card))
+    .then((card) => {
+      if (req.user._id === String(card.owner)) {
+        return Card.deleteOne({ _id: id })
+          .then(() => res.status(200).send({ message: `Карточка ${id} удалена` }))
+          .catch((err) => setErrors(res, err));
+      }
+      return res.status(403).send({ message: 'Нельзя удалить чужую карточку' });
+    })
     .catch((err) => setErrors(res, err));
 };
 
@@ -56,5 +63,5 @@ const dislikeCard = (req, res) => Card
   .catch((err) => setErrors(res, err));
 
 module.exports = {
-  getCards, deleteCardById, createCard, likeCard, dislikeCard,
+  getCards, deleteCard, createCard, likeCard, dislikeCard,
 };
