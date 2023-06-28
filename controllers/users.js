@@ -1,57 +1,39 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-
-const setErrors = (res, err) => {
-  if (err.message === 'NoValidEmailOrPassword') {
-    return res.status(401)
-      .send({ message: 'Не верный email или password' });
-  }
-
-  if (err.message === 'NoValidId') {
-    return res.status(404)
-      .send({ message: 'Запрашиваемый пользователь не найден' });
-  }
-
-  if (err.name === 'CastError') {
-    return res.status(400)
-      .send({ message: 'Переданы некорректные данные' });
-  }
-
-  if (err.name === 'ValidationError') {
-    return res.status(400)
-      .send({
-        message: `${Object.values(err.errors)
-          .map((error) => error.message)
-          .join(', ')}`,
-      });
-  }
-
-  return res.status(500)
-    .send({ message: 'Ошибка сервера' });
-};
+const NotFound = require('../errors/NotFound');
+const BadRequest = require('../errors/BadRequest');
+const ConflictRequest = require('../errors/ConflictRequest');
+const BadAuth = require('../errors/BadAuth');
 
 const getUsers = (req, res) => User.find({})
   .then((users) => res.status(200)
     .send(users));
 
-const getUserById = (req, res, id) => User.findById(id)
-  .orFail(new Error('NoValidId'))
+const getUserById = (req, res, id, next) => User.findById(id)
+  .orFail(new NotFound('Пользователь не найден'))
   .then((user) => res.status(200)
     .send(user))
-  .catch((err) => setErrors(res, err));
+  .catch((err) => {
+    if (err.name === 'ValidationError') {
+      next(new BadRequest(`${Object.values(err.errors)
+        .map((error) => error.message)
+        .join(', ')}`));
+    }
+    next(err);
+  });
 
-const getUser = (req, res) => {
+const getUser = (req, res, next) => {
   const { id } = req.params;
-  return getUserById(req, res, id);
+  return getUserById(req, res, id, next);
 };
 
-const getCurrentUser = (req, res) => {
+const getCurrentUser = (req, res, next) => {
   const id = req.user._id;
-  return getUserById(req, res, id);
+  return getUserById(req, res, id, next);
 };
 
-const createUser = (req, res) => {
+const createUser = (req, res, next) => {
   const newUserData = req.body;
   bcrypt.hash(req.body.password, 10)
     .then((hash) => {
@@ -60,13 +42,25 @@ const createUser = (req, res) => {
     })
     .then((newUser) => res.status(201)
       .send(newUser))
-    .catch((err) => setErrors(res, err));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequest(`${Object.values(err.errors)
+          .map((error) => error.message)
+          .join(', ')}`));
+      }
+
+      if (err.code === 11000) {
+        next(new ConflictRequest());
+      }
+
+      next(err);
+    });
 };
 
-const updateUserById = (req, res) => {
-  console.log('updateUserById');
+const updateUserById = (req, res, next) => {
   const id = req.user._id;
   const dataUpdate = req.body;
+
   User.findByIdAndUpdate(id, dataUpdate, {
     new: true,
     runValidators: true,
@@ -74,22 +68,28 @@ const updateUserById = (req, res) => {
   })
     .then((updateUser) => res.status(200)
       .send(updateUser))
-    .catch((err) => setErrors(res, err));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequest(`${Object.values(err.errors)
+          .map((error) => error.message)
+          .join(', ')}`));
+      }
+      next(err);
+    });
 };
 
-const login = (req, res) => {
-  console.log('login');
+const login = (req, res, next) => {
   const {
     email,
     password,
   } = req.body;
-  User.findOne({ email }).select('+password')
-    .orFail(new Error('NoValidEmailOrPassword'))
+  User.findOne({ email })
+    .select('+password')
+    .orFail(new BadAuth('Неверный логин или пароль'))
     .then((user) => {
-      console.log(user);
       bcrypt.compare(password, user.password)
         .then((matched) => {
-          if (!matched) throw new Error('NoValidEmailOrPassword');
+          if (!matched) throw new BadAuth('Неверный логин или пароль');
 
           const token = jwt.sign(
             { _id: user._id },
@@ -104,9 +104,9 @@ const login = (req, res) => {
             })
             .end();
         })
-        .catch((err) => setErrors(res, err));
+        .catch(next);
     })
-    .catch((err) => setErrors(res, err));
+    .catch(next);
 };
 
 module.exports = {

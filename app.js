@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const routes = require('./routes/index');
 const { createUser, login } = require('./controllers/users');
 const auth = require('./middlewares/auth');
+const errors = require('./middlewares/errors');
 
 const { PORT = 3000, DB_URL = 'mongodb://127.0.0.1:27017/mestodb' } = process.env;
 const app = express();
@@ -27,6 +28,8 @@ app.post('/signup', createUser);
 app.use(auth);
 
 app.use(routes);
+
+app.use(errors);
 
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);
