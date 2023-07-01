@@ -26,7 +26,7 @@ const deleteCard = (req, res, next) => {
             .send({ message: `Карточка ${id} удалена` }))
           .catch(next);
       }
-      next(new BadForbidden('Доступ запрещен'));
+      return next(new BadForbidden('Доступ запрещен'));
     })
     .catch(next);
 };

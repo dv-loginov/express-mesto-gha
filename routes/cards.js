@@ -1,16 +1,16 @@
 const router = require('express')
   .Router();
 const {
+  celebrate,
+  Joi,
+} = require('celebrate');
+const {
   getCards,
   deleteCard,
   createCard,
   likeCard,
   dislikeCard,
 } = require('../controllers/cards');
-const {
-  celebrate,
-  Joi,
-} = require('celebrate');
 
 router.get('/', getCards);
 
