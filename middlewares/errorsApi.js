@@ -1,4 +1,4 @@
-const errors = (err, req, res, next) => {
+const errorsApi = (err, req, res, next) => {
   console.log(err.statusCode);
   console.log(err.name);
   console.log(err.message);
@@ -12,4 +12,4 @@ const errors = (err, req, res, next) => {
   next();
 };
 
-module.exports = errors;
+module.exports = errorsApi;

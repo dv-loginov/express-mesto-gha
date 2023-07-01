@@ -2,7 +2,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const NotFound = require('../errors/NotFound');
-const BadRequest = require('../errors/BadRequest');
 const ConflictRequest = require('../errors/ConflictRequest');
 const BadAuth = require('../errors/BadAuth');
 
@@ -14,14 +13,7 @@ const getUserById = (req, res, id, next) => User.findById(id)
   .orFail(new NotFound('Пользователь не найден'))
   .then((user) => res.status(200)
     .send(user))
-  .catch((err) => {
-    if (err.name === 'ValidationError') {
-      next(new BadRequest(`${Object.values(err.errors)
-        .map((error) => error.message)
-        .join(', ')}`));
-    }
-    next(err);
-  });
+  .catch(next);
 
 const getUser = (req, res, next) => {
   const { id } = req.params;
@@ -31,30 +23,6 @@ const getUser = (req, res, next) => {
 const getCurrentUser = (req, res, next) => {
   const id = req.user._id;
   return getUserById(req, res, id, next);
-};
-
-const createUser = (req, res, next) => {
-  const newUserData = req.body;
-  bcrypt.hash(req.body.password, 10)
-    .then((hash) => {
-      newUserData.password = hash;
-      return User.create(newUserData);
-    })
-    .then((newUser) => res.status(201)
-      .send(newUser))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next(new BadRequest(`${Object.values(err.errors)
-          .map((error) => error.message)
-          .join(', ')}`));
-      }
-
-      if (err.code === 11000) {
-        next(new ConflictRequest());
-      }
-
-      next(err);
-    });
 };
 
 const updateUserById = (req, res, next) => {
@@ -68,11 +36,21 @@ const updateUserById = (req, res, next) => {
   })
     .then((updateUser) => res.status(200)
       .send(updateUser))
+    .catch(next);
+};
+
+const createUser = (req, res, next) => {
+  const newUserData = req.body;
+  bcrypt.hash(req.body.password, 10)
+    .then((hash) => {
+      newUserData.password = hash;
+      return User.create(newUserData);
+    })
+    .then((newUser) => res.status(201)
+      .send(newUser))
     .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next(new BadRequest(`${Object.values(err.errors)
-          .map((error) => error.message)
-          .join(', ')}`));
+      if (err.code === 11000) {
+        next(new ConflictRequest());
       }
       next(err);
     });

@@ -1,6 +1,6 @@
 const Card = require('../models/card');
-const BadRequest = require('../errors/BadRequest');
 const NotFound = require('../errors/NotFound');
+const BadForbidden = require('../errors/BadForbidden');
 
 const getCards = (req, res, next) => Card.find({})
   .then((cards) => res.send(cards))
@@ -12,14 +12,7 @@ const createCard = (req, res, next) => {
   return Card.create(newCardData)
     .then((newCard) => res.status(201)
       .send(newCard))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next(new BadRequest(`${Object.values(err.errors)
-          .map((error) => error.message)
-          .join(', ')}`));
-      }
-      next(err);
-    });
+    .catch(next);
 };
 
 const deleteCard = (req, res, next) => {
@@ -33,8 +26,7 @@ const deleteCard = (req, res, next) => {
             .send({ message: `Карточка ${id} удалена` }))
           .catch(next);
       }
-      return res.status(403)
-        .send({ message: 'Нельзя удалить чужую карточку' });
+      next(new BadForbidden('Доступ запрещен'));
     })
     .catch(next);
 };
