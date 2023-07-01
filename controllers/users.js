@@ -44,16 +44,22 @@ const createUser = (req, res, next) => {
   bcrypt.hash(req.body.password, 10)
     .then((hash) => {
       newUserData.password = hash;
-      return User.create(newUserData);
+      User.create(newUserData)
+        .then((newUser) => {
+          console.log(typeof newUser);
+          const user = newUser.toObject();
+          delete user.password;
+          res.status(201)
+            .send(user);
+        })
+        .catch((err) => {
+          if (err.code === 11000) {
+            next(new ConflictRequest());
+          }
+          next(err);
+        });
     })
-    .then((newUser) => res.status(201)
-      .send(newUser))
-    .catch((err) => {
-      if (err.code === 11000) {
-        next(new ConflictRequest());
-      }
-      next(err);
-    });
+    .catch(next);
 };
 
 const login = (req, res, next) => {
@@ -80,7 +86,7 @@ const login = (req, res, next) => {
               maxAge: 3600000,
               httpOnly: true,
             })
-            .end();
+            .send({ token });
         })
         .catch(next);
     })
