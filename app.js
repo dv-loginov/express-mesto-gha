@@ -2,17 +2,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const helmet = require('helmet');
-const {
-  errors,
-  celebrate,
-  Joi,
-} = require('celebrate');
+const rateLimit = require('express-rate-limit');
+const { errors } = require('celebrate');
 const routes = require('./routes/index');
-const {
-  createUser,
-  login,
-} = require('./controllers/users');
-const auth = require('./middlewares/auth');
 const errorsApi = require('./middlewares/errorsApi');
 
 const {
@@ -20,6 +12,13 @@ const {
   DB_URL = 'mongodb://127.0.0.1:27017/mestodb',
 } = process.env;
 const app = express();
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 async function connectBD(url) {
   await mongoose.connect(url, { useNewUrlParser: true });
@@ -31,41 +30,9 @@ connectBD(DB_URL)
 
 app.use(helmet());
 
+app.use(limiter);
+
 app.use(bodyParser.json());
-
-app.post('/signin', celebrate({
-  body: Joi.object()
-    .keys({
-      email: Joi.string()
-        .required()
-        .email(),
-      password: Joi.string()
-        .required()
-        .min(8),
-    }),
-}), login);
-
-app.post('/signup', celebrate({
-  body: Joi.object()
-    .keys({
-      name: Joi.string()
-        .min(2)
-        .max(30),
-      about: Joi.string()
-        .min(2)
-        .max(30),
-      avatar: Joi.string()
-        .pattern(/https?:\/\/([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}/),
-      email: Joi.string()
-        .required()
-        .email(),
-      password: Joi.string()
-        .required()
-        .min(8),
-    }),
-}), createUser);
-
-app.use(auth);
 
 app.use(routes);
 

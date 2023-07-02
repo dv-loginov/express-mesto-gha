@@ -46,7 +46,6 @@ const createUser = (req, res, next) => {
       newUserData.password = hash;
       User.create(newUserData)
         .then((newUser) => {
-          console.log(typeof newUser);
           const user = newUser.toObject();
           delete user.password;
           res.status(201)
